@@ -5,7 +5,7 @@ image:
   tag: "latest"
 
 
-# The rest of the file remains the same...
+
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""

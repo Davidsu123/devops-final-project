@@ -77,5 +77,3 @@ kubectl create secret generic mongodb-secret --from-literal=MONGO_PASSWORD='your
 ---
 
 This project was completed as part of the Sela DevOps course.
-
-amir
