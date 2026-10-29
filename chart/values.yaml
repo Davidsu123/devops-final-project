@@ -1,0 +1,41 @@
+replicaCount: 1
+image:
+  repository: david147852/final-project-app
+  pullPolicy: Always
+  tag: "latest"
+
+
+# The rest of the file remains the same...
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+podAnnotations: {}
+podLabels: {}
+podSecurityContext: {}
+securityContext: {}
+service:
+  type: NodePort
+  port: 5000
+ingress:
+  enabled: false
+resources: {}
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 5000
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 5000
+autoscaling:
+  enabled: false
+volumes: []
+volumeMounts: []
+nodeSelector: {}
+tolerations: []
+affinity: {}

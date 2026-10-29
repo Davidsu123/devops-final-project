@@ -1,0 +1,26 @@
+controller:
+  installPlugins:
+    - kubernetes:latest
+    - git:latest
+    - configuration-as-code:latest
+    - workflow-aggregator:latest
+    - blueocean:latest
+    - gitlab-plugin:latest
+    - gitlab-api:latest
+    - workflow-multibranch:latest
+    - login-theme:46.v3f624efb_23d
+    - prometheus:latest # Bonus plugin
+  
+  # It's a good practice to give Jenkins enough memory
+  resources:
+    requests:
+      cpu: "1000m"
+      memory: "2Gi"
+    limits:
+      cpu: "2000m"
+      memory: "4Gi"
+      
+# This section ensures your Jenkins data is saved even if the pod restarts
+persistence:
+  enabled: true
+  size: 8Gi
