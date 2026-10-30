@@ -1,0 +1,2 @@
+# Keep Linux line endings in every text file, also on Windows.
+* text=auto eol=lf

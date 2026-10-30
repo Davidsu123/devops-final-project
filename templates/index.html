@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Visit Counter</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #eef3f8;
+      color: #1f2d3d;
+    }
+    .card {
+      background: #ffffff;
+      padding: 36px 56px;
+      border-radius: 16px;
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+      text-align: center;
+      max-width: 420px;
+    }
+    .avatar {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 14px;
+      border-radius: 50%;
+      background: #2b6cb0;
+      color: #ffffff;
+      font-size: 24px;
+      font-weight: bold;
+      line-height: 64px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 26px;
+    }
+    .count {
+      font-size: 80px;
+      font-weight: bold;
+      color: #2b6cb0;
+      margin: 12px 0;
+    }
+    .error {
+      color: #c53030;
+    }
+    .footer {
+      margin-top: 28px;
+      font-size: 13px;
+      color: #6b7c8f;
+      line-height: 1.7;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="avatar" title="David Sulkis">DS</div>
+    {% if count is not none %}
+      <h1>Hello, visitor!</h1>
+      <p>This page was opened</p>
+      <div class="count">{{ count }}</div>
+      <p>times so far. Refresh to add one more.</p>
+    {% else %}
+      <h1>Something went wrong</h1>
+      <p class="error">The database is not available right now. Try again in a minute.</p>
+    {% endif %}
+    <div class="footer">
+      Served by pod: {{ pod_name }}<br>
+      Version: {{ version }}
+    </div>
+  </div>
+</body>
+</html>

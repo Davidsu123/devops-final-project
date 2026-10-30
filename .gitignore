@@ -1,8 +1,22 @@
 # Python
 __pycache__/
 *.pyc
+.pytest_cache/
+.venv/
 venv/
 
-# IDE files
+# Editors
 .idea/
 .vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Secrets never go into Git
+.env
+*.env
+secrets/
+
+# Helm packages (Jenkins builds them)
+*.tgz
