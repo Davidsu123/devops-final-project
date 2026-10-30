@@ -1,0 +1,27 @@
+# Jenkins (INF-02), installed with Helm in the default namespace.
+# The build agents run as pods in the same (default) namespace.
+controller:
+  # The plugin list from the project guidelines.
+  # gitlab-plugin and gitlab-api were left out because the project moved to GitHub
+  # (the git plugin is enough for that).
+  installPlugins:
+    - kubernetes:latest
+    - git:latest
+    - configuration-as-code:latest
+    - workflow-aggregator:latest
+    - workflow-multibranch:latest
+    - blueocean:latest
+    - login-theme:latest
+    - prometheus:latest
+
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      memory: 2Gi
+
+# Keep Jenkins data (jobs, credentials, history) if the pod restarts
+persistence:
+  enabled: true
+  size: 8Gi

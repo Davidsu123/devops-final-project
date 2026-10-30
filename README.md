@@ -1,79 +1,71 @@
-# Sela Final Project: End-to-End CI/CD Web Application
+# DevOps Final Project
 
-This project demonstrates a complete, end-to-end CI/CD pipeline for a database-backed web application, built on modern DevOps principles and tools.
+A small web app that counts the visits to its page, with a full CI/CD flow on Kubernetes.
 
-## Project Overview
+![The web page](docs/screenshot.png)
 
-The goal of this project is to build, test, deploy, and monitor a Python Flask application automatically. Every code change pushed to the Git repository triggers a CI pipeline that runs automated tests, builds a new Docker image, and pushes it to a container registry. A GitOps controller (ArgoCD) then detects the new version and automatically deploys it to a Kubernetes cluster. The entire system is monitored using Prometheus and Grafana.
+- **App:** Python (Flask) and a MongoDB database. Every visit is saved in MongoDB and the page shows the total.
+- **CI:** Jenkins builds, tests and checks every branch. From main it also publishes the image and the Helm chart to Docker Hub.
+- **CD:** Argo CD deploys the newest version to the `dev` environment by itself.
+- **Monitoring:** Prometheus collects the metrics of the app and Grafana shows them.
 
----
+## How a change gets to the dev environment
 
-## Workflow Diagram
+1. Work on a feature branch and push it to GitHub.
+2. Jenkins runs the pipeline on the branch: Docker build, unit tests, Helm lint and Helm template.
+3. Open a pull request. After it is merged to main, Jenkins runs again and also publishes the image `david147852/final-project-app:b-<build>` and the chart `final-project-chart` version `1.0.<build>` to Docker Hub.
+4. Argo CD finds the new chart version and deploys it to the `dev` namespace.
+5. If a build fails, Jenkins sends a Discord message and an email.
 
-This diagram shows the automated flow from a code push to a live deployment:
+## Cluster layout
 
-(GitLab)           (Jenkins)              (Docker Hub)           (ArgoCD)            (Kubernetes)
-Git Push    -->    CI Pipeline Runs    -->   New Image Push   -->   Detects Change   -->   Rolls out New Version
-(Code)             (Test & Build)           (Registry)             (Syncs State)          (Live App)
+| Namespace | What runs there |
+|---|---|
+| `default` | Jenkins and its build agents, MongoDB |
+| `observation` | Prometheus and Grafana |
+| `argocd` | Argo CD |
+| `dev` | The app |
 
+## What is in this repository
 
----
+| Path | What it is |
+|---|---|
+| `app.py` | The web app: the page, `/health`, `/ready` and `/metrics` |
+| `db.py` | The database layer. Only this file talks to MongoDB |
+| `templates/index.html` | The web page |
+| `test_app.py` | Unit tests. They use a fake database, so they run anywhere |
+| `Dockerfile` | The image of the app |
+| `chart/` | The Helm chart of the app |
+| `Jenkinsfile` | The CI pipeline |
+| `infra/mongodb/` | MongoDB |
+| `infra/monitoring/` | Prometheus and Grafana |
+| `infra/jenkins/` | Jenkins |
+| `infra/argocd/` | Argo CD and the dev environment |
 
-## Technology Stack
+## Install order
 
-* **Version Control:** GitLab
-* **Application:** Python, Flask
-* **Database:** MongoDB
-* **Testing:** Pytest
-* **Containerization:** Docker, Docker Hub
-* **CI (Continuous Integration):** Jenkins
-* **CD (Continuous Deployment):** ArgoCD
-* **Deployment:** Helm
-* **Orchestration:** Kubernetes (running on Docker Desktop)
-* **Monitoring:** Prometheus & Grafana
+On a Kubernetes cluster (the one in Docker Desktop is enough):
 
----
+1. [MongoDB](infra/mongodb/README.md)
+2. [Prometheus and Grafana](infra/monitoring/README.md)
+3. [Jenkins](infra/jenkins/README.md)
+4. [Argo CD and the dev environment](infra/argocd/README.md)
 
-## Key Features
+## Run the unit tests
 
-* **Automated CI Pipeline:** Every `git push` automatically triggers a Jenkins pipeline to validate the code.
-* **Pipeline-as-Code:** The entire CI process is defined declaratively in the `Jenkinsfile`, allowing for version control of the pipeline itself.
-* **Dynamic Build Agents:** Jenkins uses the Kubernetes plugin to spin up temporary, clean build environments for each run, ensuring no interference between jobs.
-* **Automated Quality Gates:** The pipeline includes a dedicated stage to run `pytest` unit tests, preventing bugs from proceeding to the next stage.
-* **GitOps Deployment:** ArgoCD monitors the Git repository and automatically syncs the application state in Kubernetes to match the desired state defined in the Helm chart.
-* **Database Integration:** The application connects to a MongoDB instance running within the cluster to provide data persistence.
-* **Built-in Monitoring:** The application is instrumented to expose performance metrics, which are automatically collected by Prometheus and can be visualized in Grafana.
+```
+pip install -r requirements-dev.txt
+pytest -v
+```
 
----
+## Quick demo without Jenkins and Argo CD
 
-## How to Run
+Runs the app in the `default` namespace, next to MongoDB (install MongoDB first):
 
-1.  **Prerequisites:**
-    * Docker Desktop with Kubernetes enabled.
-    * Helm CLI installed.
-    * `kubectl` configured to point to the Docker Desktop cluster.
+```
+docker build -t david147852/final-project-app:dev .
+helm install final-project chart --set serviceMonitor.enabled=false
+kubectl port-forward svc/final-project 5000:5000
+```
 
-2.  **Clone the Repository:**
-    ```bash
-    git clone [https://gitlab.com/sela-tracks/1116/students/david/final-project-app.git](https://gitlab.com/sela-tracks/1116/students/david/final-project-app.git)
-    cd final-project-app
-    ```
-   
-
-### 3. Setup & Deployment:
-
-**IMPORTANT: Before deploying, you must create the MongoDB secret in your cluster. Run the following command, replacing 'your-password' with your actual password:**
-
-kubectl create secret generic mongodb-secret --from-literal=MONGO_PASSWORD='your-super-secret-password'
-```markdown
-* It's recommended to use the "Fresh Start" script which resets the Kubernetes cluster and installs Jenkins and ArgoCD.
-* After installation, configure the necessary credentials and webhooks in Jenkins and GitLab.
-* ArgoCD will then automatically discover and deploy the application from the `chart/` directory in this repository.
-
-4.  **Accessing Services:**
-    * **Application:** Exposed via a `NodePort` on the Kubernetes cluster.
-    * **Jenkins/ArgoCD/Grafana:** Accessible via `kubectl port-forward`.
-
----
-
-This project was completed as part of the Sela DevOps course.
+Open http://localhost:5000 and refresh the page a few times.

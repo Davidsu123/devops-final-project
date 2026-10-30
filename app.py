@@ -1,46 +1,50 @@
 import os
-import datetime
-from flask import Flask, jsonify
-from pymongo import MongoClient, errors
-from prometheus_flask_exporter import PrometheusMetrics
+import socket
 
-# Initialize the Flask application and metrics exporter
+from flask import Flask, jsonify, render_template
+from prometheus_client import Counter
+from prometheus_flask_exporter import PrometheusMetrics
+from pymongo.errors import PyMongoError
+
+import db
+
 app = Flask(__name__)
 metrics = PrometheusMetrics(app)
 
-# --- DATABASE CONNECTION ---
-# Get password from environment variable for security
-MONGODB_PASSWORD = os.environ.get("MONGO_PASSWORD")
+# Custom metric: how many times the main page was opened
+VISITS_COUNTER = Counter("app_page_visits_total", "Visits to the main page")
 
-if not MONGODB_PASSWORD:
-    raise ValueError("MONGO_PASSWORD environment variable not set")
-
-# Connect to MongoDB using the internal Kubernetes service name ('mongodb')
-client = MongoClient(f"mongodb://root:{MONGODB_PASSWORD}@mongodb.default.svc.cluster.local:27017/")
-db = client.finalproject
-visits_collection = db.visits
+VERSION = os.environ.get("APP_VERSION", "dev")
+POD_NAME = socket.gethostname()
 
 
-@app.route('/')
+@app.route("/")
 def index():
-    """Increments visit counter and returns the total number of visits."""
     try:
-        visits_collection.insert_one({"visit_time": datetime.datetime.utcnow()})
-        count = visits_collection.count_documents({})
-        return jsonify(message=f"Successfully connected to MongoDB! Page visits: {count}.")
-    except Exception as e:
-        return jsonify(message="Error connecting to the database.", error=str(e)), 500
+        db.add_visit()
+        count = db.count_visits()
+    except PyMongoError:
+        app.logger.exception("Could not reach the database")
+        return render_template("index.html", count=None, pod_name=POD_NAME, version=VERSION), 503
+    VISITS_COUNTER.inc()
+    return render_template("index.html", count=count, pod_name=POD_NAME, version=VERSION)
 
 
-@app.route('/health')
-def health_check():
-    """Health check endpoint for Kubernetes probes."""
+# Liveness: is the app itself running? Does not check the database.
+@app.route("/health")
+def health():
+    return jsonify(status="UP")
+
+
+# Readiness: can the app reach the database?
+@app.route("/ready")
+def ready():
     try:
-        # Check the database connection by pinging the admin database
-        client.admin.command('ping')
-        return jsonify(status="UP", db_connection="OK"), 200
-    except Exception as e:
-        return jsonify(status="DOWN", error=str(e)), 500
+        db.ping()
+    except PyMongoError:
+        return jsonify(status="NOT READY"), 503
+    return jsonify(status="READY")
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)

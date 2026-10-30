@@ -1,0 +1,24 @@
+# The dev environment (PIPE-03).
+# Argo CD installs the newest version of the app's Helm chart from Docker Hub.
+# Jenkins pushes a new chart version on every successful build of main,
+# so every change that reaches main is deployed to dev by itself.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: final-project-dev
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: registry-1.docker.io/david147852
+    chart: final-project-chart
+    targetRevision: "*"   # always the newest version
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

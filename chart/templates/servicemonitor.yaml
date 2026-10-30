@@ -1,15 +1,18 @@
+{{- if .Values.serviceMonitor.enabled }}
+# Tells Prometheus to collect the app metrics from /metrics every 15 seconds
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: {{ include "chart.fullname" . }}
+  name: {{ .Release.Name }}
   labels:
-    release: prometheus # This label is important for the Prometheus Operator to find it
-    {{- include "chart.labels" . | nindent 4 }}
+    {{- include "final-project.labels" . | nindent 4 }}
+    release: prometheus  # Prometheus looks for this label
 spec:
   selector:
     matchLabels:
-      {{- include "chart.selectorLabels" . | nindent 6 }}
+      {{- include "final-project.selectorLabels" . | nindent 6 }}
   endpoints:
-  - port: http
-    path: /metrics
-    interval: 15s
+    - port: http
+      path: /metrics
+      interval: 15s
+{{- end }}
